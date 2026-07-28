@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5 Açılır/Kapanır Menü Tasarımı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#111318; --fg:#e8e6e1; --muted:#8a8d97; --line:#262933; --accent:#7c9eff;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family:'Space Grotesk',sans-serif; -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+
+  .intro{max-width:760px;margin:0 auto;padding:56px 24px 28px;text-align:center;}
+  .intro .eyebrow{
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 14px;
+  }
+  .intro h1{font-size:clamp(26px,5vw,40px);margin:0 0 14px;font-weight:700;letter-spacing:-0.02em;}
+  .intro p{color:var(--muted);font-size:15.5px;line-height:1.6;max-width:520px;margin:0 auto;}
+
+  .toc{
+    max-width:900px;margin:0 auto 56px;padding:0 24px;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;
+  }
+  .toc a{
+    display:block;padding:13px 15px;border:1px solid var(--line);border-radius:10px;
+    font-size:12.5px;background:#161922;transition:border-color .2s ease, transform .2s ease;
+  }
+  .toc a:hover{border-color:var(--accent);transform:translateY(-2px);}
+  .toc a span{display:block;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;margin-bottom:4px;}
+
+  .section{max-width:920px;margin:0 auto 80px;padding:0 24px;}
+  .section-label{
+    display:flex;align-items:baseline;gap:12px;margin:0 0 6px;
+    padding-top:34px;border-top:1px solid var(--line);
+  }
+  .section-label .num{font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:13px;}
+  .section-label h2{font-size:19px;margin:0;font-weight:600;}
+  .section-desc{color:var(--muted);font-size:13.5px;margin:0 0 18px;}
+
+  .demo{
+    position:relative;overflow:hidden;
+    border:1px solid var(--line);border-radius:16px;
+    background:#0b0c10; min-height:380px;
+  }
+  .demo-topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 18px;border-bottom:1px solid var(--line);
+    position:relative;z-index:5;background:#0e1016;
+  }
+  .demo-logo{font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:8px;}
+  .demo-logo .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .demo-body{padding:34px 22px;text-align:center;}
+  .demo-body .k{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;}
+  .demo-body h3{font-size:19px;margin:10px 0 6px;font-weight:700;}
+  .demo-body p{color:var(--muted);font-size:13px;max-width:340px;margin:0 auto;}
+
+  /* generic hamburger icon, shared, colored per demo via currentColor */
+  .burger-btn{
+    display:flex;flex-direction:column;justify-content:center;gap:5px;
+    width:38px;height:34px;background:none;border:none;padding:0;
+  }
+  .burger-btn span{
+    display:block;height:2px;border-radius:2px;background:currentColor;
+    transition:transform .3s ease, opacity .3s ease, width .3s ease;
+  }
+  .burger-btn span:nth-child(1){width:22px;}
+  .burger-btn span:nth-child(2){width:16px;align-self:flex-end;}
+  .burger-btn span:nth-child(3){width:22px;}
+  .burger-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg);width:22px;}
+  .burger-btn.open span:nth-child(2){opacity:0;}
+  .burger-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);width:22px;}
+
+  /* =====================================================
+     1) TAM EKRAN OVERLAY (fade + scale) — mor tema
+  =====================================================*/
+  .m1{ --c:#a78bfa; }
+  .m1 .demo-logo .dot{background:var(--c);}
+  .m1 .burger-btn{color:#e8e6e1;}
+  .m1-overlay{
+    position:absolute;inset:0;z-index:10;
+    background:rgba(10,8,20,.97);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    opacity:0;visibility:hidden;transform:scale(.96);
+    transition:opacity .3s ease, transform .3s ease, visibility .3s;
+  }
+  .m1-overlay.open{opacity:1;visibility:visible;transform:scale(1);}
+  .m1-overlay a{
+    font-size:22px;font-weight:700;color:#f1eefe;padding:10px 0;
+    opacity:.85;transition:opacity .2s ease, color .2s ease;
+  }
+  .m1-overlay a:hover{opacity:1;color:var(--c);}
+  .m1-overlay .m1-close{
+    position:absolute;top:16px;right:18px;color:#e8e6e1;
+  }
+
+  /* =====================================================
+     2) SAĞDAN KAYAN YAN MENÜ (off-canvas drawer) — turkuaz
+  =====================================================*/
+  .m2{ --c:#2dd4bf; }
+  .m2 .demo-logo .dot{background:var(--c);}
+  .m2 .burger-btn{color:#e8e6e1;}
+  .m2-backdrop{
+    position:absolute;inset:0;z-index:9;background:rgba(0,0,0,.45);
+    opacity:0;visibility:hidden;transition:opacity .3s ease, visibility .3s;
+  }
+  .m2-backdrop.open{opacity:1;visibility:visible;}
+  .m2-drawer{
+    position:absolute;top:0;right:0;bottom:0;z-index:10;
+    width:72%;max-width:260px;
+    background:#0f1720;border-left:1px solid #1d2a33;
+    transform:translateX(100%); transition:transform .32s cubic-bezier(.4,0,.2,1);
+    display:flex;flex-direction:column;padding:18px 20px;
+  }
+  .m2-drawer.open{transform:translateX(0);}
+  .m2-drawer .m2-close{align-self:flex-end;color:#e8e6e1;margin-bottom:18px;}
+  .m2-drawer a{
+    padding:13px 4px;color:#dfe7e6;font-size:15px;font-weight:500;
+    border-bottom:1px solid #1d2a33;
+  }
+  .m2-drawer .m2-cta{
+    margin-top:18px;background:var(--c);color:#06201c;text-align:center;
+    padding:11px;border-radius:10px;font-weight:700;font-size:13.5px;border:none;
+  }
+
+  /* =====================================================
+     3) SOLDAN KAYAN İÇERİĞİ İTEN MENÜ (push drawer) — turuncu
+  =====================================================*/
+  .m3{ --c:#fb923c; overflow:hidden; }
+  .m3 .demo-logo .dot{background:var(--c);}
+  .m3 .burger-btn{color:#e8e6e1;}
+  .m3-wrap{position:relative;height:100%;min-height:380px;}
+  .m3-panel{
+    position:absolute;top:0;left:0;bottom:0;width:68%;max-width:230px;
+    background:#1a1408;border-right:1px solid #2b2213;
+    transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+    z-index:6;display:flex;flex-direction:column;padding:18px 18px;
+  }
+  .m3-panel.open{transform:translateX(0);}
+  .m3-panel a{padding:12px 4px;color:#f0e4d3;font-size:14.5px;font-weight:500;border-bottom:1px solid #2b2213;}
+  .m3-content{
+    position:relative;z-index:4;transition:transform .3s cubic-bezier(.4,0,.2,1);
+    background:#0b0c10;min-height:100%;
+  }
+  .m3-content.pushed{transform:translateX(68%);}
+  @media (min-width:481px){
+    .m3-content.pushed{transform:translateX(230px);}
+  }
+
+  /* =====================================================
+     4) YUKARIDAN AŞAĞI AÇILAN DROPDOWN — sarı/lime
+  =====================================================*/
+  .m4{ --c:#d9f99d; }
+  .m4 .demo-logo .dot{background:var(--c);}
+  .m4 .burger-btn{color:#e8e6e1;}
+  .m4-panel{
+    position:absolute;top:0;left:0;right:0;z-index:8;
+    background:#14170f;border-bottom:1px solid #2a2f1e;
+    max-height:0;overflow:hidden;
+    transition:max-height .32s cubic-bezier(.4,0,.2,1);
+  }
+  .m4-panel.open{max-height:260px;}
+  .m4-panel-inner{padding:8px 20px 18px;display:flex;flex-direction:column;}
+  .m4-panel a{padding:12px 4px;color:#eef2e3;font-size:15px;font-weight:500;border-bottom:1px solid #22271a;}
+
+  /* =====================================================
+     5) ALTTAN YUKARI AÇILAN BOTTOM SHEET — pembe
+  =====================================================*/
+  .m5{ --c:#f472b6; }
+  .m5 .demo-logo .dot{background:var(--c);}
+  .m5 .burger-btn{color:#e8e6e1;}
+  .m5-backdrop{
+    position:absolute;inset:0;z-index:9;background:rgba(0,0,0,.45);
+    opacity:0;visibility:hidden;transition:opacity .3s ease, visibility .3s;
+  }
+  .m5-backdrop.open{opacity:1;visibility:visible;}
+  .m5-sheet{
+    position:absolute;left:0;right:0;bottom:0;z-index:10;
+    background:#1a1017;border-top-left-radius:20px;border-top-right-radius:20px;
+    border:1px solid #2c1a24;border-bottom:none;
+    transform:translateY(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);
+    padding:10px 22px 22px;
+  }
+  .m5-sheet.open{transform:translateY(0);}
+  .m5-sheet .m5-grabber{
+    width:36px;height:4px;border-radius:2px;background:#3a2732;margin:6px auto 14px;
+  }
+  .m5-sheet a{
+    display:block;padding:13px 4px;color:#fbe4ee;font-size:15px;font-weight:500;
+    border-bottom:1px solid #2c1a24;
+  }
+
+  footer.credits{
+    text-align:center;color:var(--muted);font-size:12px;
+    padding:20px 24px 60px;font-family:'JetBrains Mono',monospace;
+  }
+</style>
+</head>
+<body>
+
+  <div class="intro">
+    <p class="eyebrow">Etkileşim Deseni Showcase</p>
+    <h1>5 Farklı Açılır/Kapanır Menü</h1>
+    <p>Hamburger simgesine dokun ve her birinin farklı açılma-kapanma animasyonunu gör: tam ekran, yandan kayan, iten, yukarıdan açılan ve alttan açılan.</p>
+  </div>
+
+  <div class="toc">
+    <a href="#m1"><span>01</span>Tam Ekran Overlay</a>
+    <a href="#m2"><span>02</span>Sağdan Kayan Menü</a>
+    <a href="#m3"><span>03</span>İçeriği İten Menü</a>
+    <a href="#m4"><span>04</span>Yukarıdan Açılan</a>
+    <a href="#m5"><span>05</span>Alttan Açılan Sheet</a>
+  </div>
+
+  <!-- 1: FULLSCREEN OVERLAY -->
+  <div class="section" id="m1">
+    <div class="section-label"><span class="num">01</span><h2>Tam Ekran Overlay Menü</h2></div>
+    <p class="section-desc">Hamburgere basınca menü tüm alanı kaplayacak şekilde büyüyerek açılır, ortalanmış linkler gösterir.</p>
+    <div class="demo m1">
+      <div class="demo-topbar">
+        <div class="demo-logo"><span class="dot"></span>Nova</div>
+        <button class="burger-btn" id="m1-burger" onclick="toggleM1()" aria-label="Menü">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+      <div class="demo-body">
+        <p class="k" style="color:#a78bfa">Fade + Scale</p>
+        <h3>Tam ekranı kaplayan menü</h3>
+        <p>Kapatmak için X'e veya bir linke tıkla.</p>
+      </div>
+      <div class="m1-overlay" id="m1-overlay">
+        <button class="burger-btn open m1-close" onclick="toggleM1()" aria-label="Kapat"><span></span><span></span><span></span></button>
+        <a href="#" onclick="toggleM1();return false;">Anasayfa</a>
+        <a href="#" onclick="toggleM1();return false;">Ürünler</a>
+        <a href="#" onclick="toggleM1();return false;">Hakkımızda</a>
+        <a href="#" onclick="toggleM1();return false;">İletişim</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2: RIGHT SLIDE DRAWER -->
+  <div class="section" id="m2">
+    <div class="section-label"><span class="num">02</span><h2>Sağdan Kayan Yan Menü</h2></div>
+    <p class="section-desc">Klasik off-canvas çekmece: sağdan içeri kayar, arkada karartılmış bir zemin belirir.</p>
+    <div class="demo m2">
+      <div class="demo-topbar">
+        <div class="demo-logo"><span class="dot"></span>Nova</div>
+        <button class="burger-btn" id="m2-burger" onclick="toggleM2()" aria-label="Menü">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+      <div class="demo-body">
+        <p class="k" style="color:#2dd4bf">Off-canvas Drawer</p>
+        <h3>Sağdan kayarak açılır</h3>
+        <p>Zemine (karartılmış alana) tıklayarak da kapatabilirsin.</p>
+      </div>
+      <div class="m2-backdrop" id="m2-backdrop" onclick="toggleM2()"></div>
+      <div class="m2-drawer" id="m2-drawer">
+        <button class="burger-btn open m2-close" onclick="toggleM2()" aria-label="Kapat"><span></span><span></span><span></span></button>
+        <a href="#">Anasayfa</a>
+        <a href="#">Ürünler</a>
+        <a href="#">Hakkımızda</a>
+        <a href="#">İletişim</a>
+        <button class="m2-cta">Kayıt Ol</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3: LEFT PUSH DRAWER -->
+  <div class="section" id="m3">
+    <div class="section-label"><span class="num">03</span><h2>İçeriği İten Yan Menü</h2></div>
+    <p class="section-desc">Menü soldan açılırken, arkasındaki sayfa içeriğini yana doğru iter — bir kitapçık gibi.</p>
+    <div class="demo m3">
+      <div class="m3-wrap">
+        <div class="m3-panel" id="m3-panel">
+          <a href="#">Anasayfa</a>
+          <a href="#">Ürünler</a>
+          <a href="#">Hakkımızda</a>
+          <a href="#">İletişim</a>
+        </div>
+        <div class="m3-content" id="m3-content">
+          <div class="demo-topbar">
+            <button class="burger-btn" id="m3-burger" onclick="toggleM3()" aria-label="Menü">
+              <span></span><span></span><span></span>
+            </button>
+            <div class="demo-logo"><span class="dot"></span>Nova</div>
+          </div>
+          <div class="demo-body">
+            <p class="k" style="color:#fb923c">Push Navigation</p>
+            <h3>Sayfa içeriği kayarak yer açar</h3>
+            <p>Menü açıldığında tüm sayfa sağa doğru itilir.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4: TOP DROPDOWN -->
+  <div class="section" id="m4">
+    <div class="section-label"><span class="num">04</span><h2>Yukarıdan Aşağı Açılan Menü</h2></div>
+    <p class="section-desc">Üst çubuğun hemen altında, akordeon gibi yükseklik animasyonuyla açılan bir panel.</p>
+    <div class="demo m4">
+      <div class="demo-topbar" style="position:relative;z-index:9;">
+        <div class="demo-logo"><span class="dot"></span>Nova</div>
+        <button class="burger-btn" id="m4-burger" onclick="toggleM4()" aria-label="Menü">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+      <div class="m4-panel" id="m4-panel">
+        <div class="m4-panel-inner">
+          <a href="#">Anasayfa</a>
+          <a href="#">Ürünler</a>
+          <a href="#">Hakkımızda</a>
+          <a href="#">İletişim</a>
+        </div>
+      </div>
+      <div class="demo-body">
+        <p class="k" style="color:#a3e635">Accordion Dropdown</p>
+        <h3>Üstten açılıp kapanan panel</h3>
+        <p>Yükseklik (max-height) animasyonuyla yumuşakça açılır.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5: BOTTOM SHEET -->
+  <div class="section" id="m5">
+    <div class="section-label"><span class="num">05</span><h2>Alttan Yukarı Açılan Menü</h2></div>
+    <p class="section-desc">Mobil uygulamalarda sık görülen bottom-sheet deseni: menü ekranın altından yukarı doğru kayar.</p>
+    <div class="demo m5">
+      <div class="demo-topbar">
+        <div class="demo-logo"><span class="dot"></span>Nova</div>
+        <button class="burger-btn" id="m5-burger" onclick="toggleM5()" aria-label="Menü">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+      <div class="demo-body">
+        <p class="k" style="color:#f472b6">Bottom Sheet</p>
+        <h3>Alttan yukarı kayan panel</h3>
+        <p>Yuvarlatılmış üst köşeler ve tutamaç çizgisiyle, uygulama menülerine benzer.</p>
+      </div>
+      <div class="m5-backdrop" id="m5-backdrop" onclick="toggleM5()"></div>
+      <div class="m5-sheet" id="m5-sheet">
+        <div class="m5-grabber"></div>
+        <a href="#">Anasayfa</a>
+        <a href="#">Ürünler</a>
+        <a href="#">Hakkımızda</a>
+        <a href="#">İletişim</a>
+      </div>
+    </div>
+  </div>
+
+  <footer class="credits">5 farklı açılır/kapanır menü deseni · HTML &amp; CSS &amp; JS</footer>
+
+<script>
+  function toggleM1(){
+    document.getElementById('m1-overlay').classList.toggle('open');
+    document.getElementById('m1-burger').classList.toggle('open');
+  }
+  function toggleM2(){
+    document.getElementById('m2-drawer').classList.toggle('open');
+    document.getElementById('m2-backdrop').classList.toggle('open');
+    document.getElementById('m2-burger').classList.toggle('open');
+  }
+  function toggleM3(){
+    document.getElementById('m3-panel').classList.toggle('open');
+    document.getElementById('m3-content').classList.toggle('pushed');
+    document.getElementById('m3-burger').classList.toggle('open');
+  }
+  function toggleM4(){
+    document.getElementById('m4-panel').classList.toggle('open');
+    document.getElementById('m4-burger').classList.toggle('open');
+  }
+  function toggleM5(){
+    document.getElementById('m5-sheet').classList.toggle('open');
+    document.getElementById('m5-backdrop').classList.toggle('open');
+    document.getElementById('m5-burger').classList.toggle('open');
+  }
+</script>
+
+</body>
+</html>
